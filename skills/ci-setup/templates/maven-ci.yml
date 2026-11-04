@@ -1,0 +1,46 @@
+# Java (Maven) CI template for ci-setup. Also used for Maven-based Minecraft plugins.
+# Keep the job name "ci" and do not use a matrix: branch protection requires a check with this exact name.
+# Do not add paths filters: a required check that never starts blocks merging.
+# "verify" compiles, runs tests and packages the jar. Use ./mvnw instead of mvn if the wrapper exists.
+name: CI
+
+on:
+  push:
+    branches: [__DEFAULT_BRANCH__]
+  pull_request:
+    branches: [__DEFAULT_BRANCH__]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '__JAVA_VERSION__'
+          cache: 'maven'
+
+      - name: Build and test
+        run: mvn -B verify
+
+      # Minecraft plugins only: keep the built jar so it can be downloaded from the PR.
+      - name: Upload jar
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: jar
+          path: target/*.jar
+          retention-days: 7
+          if-no-files-found: warn

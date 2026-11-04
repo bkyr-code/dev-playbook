@@ -1,0 +1,52 @@
+# Java (Gradle) CI template for ci-setup. Also used for Minecraft mods and Gradle-based plugins.
+# Keep the job name "ci" and do not use a matrix: branch protection requires a check with this exact name.
+# Do not add paths filters: a required check that never starts blocks merging.
+# "./gradlew build" compiles, runs tests and builds the jar.
+name: CI
+
+on:
+  push:
+    branches: [__DEFAULT_BRANCH__]
+  pull_request:
+    branches: [__DEFAULT_BRANCH__]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '__JAVA_VERSION__'
+
+      - name: Setup Gradle (with cache)
+        uses: gradle/actions/setup-gradle@v6
+
+      # Safety net. Record the executable bit in git with: git update-index --chmod=+x gradlew
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build and test
+        run: ./gradlew build --no-daemon
+
+      # Minecraft mods / plugins only: keep the built jar so it can be downloaded from the PR.
+      - name: Upload jar
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: jar
+          path: build/libs/*.jar
+          retention-days: 7
+          if-no-files-found: warn

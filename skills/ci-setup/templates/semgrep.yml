@@ -1,0 +1,42 @@
+# Semgrep (SAST) template for ci-setup.
+# Keep the job name "semgrep": branch protection requires a check with this exact name.
+# Do not add paths filters: a required check that never starts blocks merging.
+# Replace __RULESETS__ with "--config p/..." options for the stack (always include p/secrets and p/owasp-top-ten).
+# --metrics=off: otherwise usage metrics are sent whenever rules are pulled from the registry.
+# --severity ERROR: fail only on high-severity findings, so rule updates alone rarely block merging.
+# If a new finding is a false positive, suppress it with a "nosemgrep" comment; otherwise open an Issue.
+name: SAST
+
+on:
+  pull_request:
+    branches: [__DEFAULT_BRANCH__]
+  push:
+    branches: [__DEFAULT_BRANCH__]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: semgrep-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semgrep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: semgrep/semgrep
+    # Skipped jobs count as success for required checks, so Dependabot PRs are not blocked.
+    if: (github.actor != 'dependabot[bot]')
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Semgrep scan
+        run: >
+          semgrep scan
+          __RULESETS__
+          --metrics=off
+          --severity ERROR
+          --error
