@@ -47,3 +47,24 @@ powershell -ExecutionPolicy Bypass -File scripts\sync-skills.ps1
 ```
 
 `ask` は、リポジトリ側の設定で `allow` されていても優先される。ただし書き方を変えたコマンドまでは止められないので、確実な防壁ではなく、通常の操作で必ず確認が出るようにするためのもの。
+
+## セッション名を自動で付けるフック（PC の Claude Code・一度だけ）
+
+Issue のブランチ（`2-...` のような名前）で Claude Code を開始・再開すると、セッション名を `#2 導入検証` の形式に自動で付ける。名前は `/issue` が `git config branch.<ブランチ名>.sessionTitle` に記録したものを使い、なければ Issue のタイトルから作る。同期スクリプトがフックを `~/.claude/hooks/dev-playbook/` にコピーするので、`~/.claude/settings.json` に次を一度だけ追記する（`hooks` が既にあれば、`SessionStart` の配列に足す）。
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"C:/Users/81903/.claude/hooks/dev-playbook/session-title.ps1\""
+          }
+        ]
+      }
+    ]
+  }
+}
+```

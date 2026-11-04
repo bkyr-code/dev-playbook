@@ -53,6 +53,23 @@ Get-ChildItem -Path $source -Directory | ForEach-Object {
     Write-Host "synced $name -> $target"
 }
 
+# ---- Hook scripts ----
+$hookSource = Join-Path $repoRoot 'hooks'
+$hookDest = Join-Path $claudeDir 'hooks\dev-playbook'
+if (Test-Path $hookSource) {
+    if ($DryRun) {
+        Write-Host "[dry-run] sync hooks -> $hookDest"
+    } else {
+        if (-not (Test-Path $hookDest)) {
+            New-Item -ItemType Directory -Path $hookDest -Force | Out-Null
+        }
+        Get-ChildItem -Path $hookSource -File | ForEach-Object {
+            Copy-Item -Path $_.FullName -Destination (Join-Path $hookDest $_.Name) -Force
+            Write-Host "synced hook $($_.Name) -> $hookDest"
+        }
+    }
+}
+
 # ---- Global CLAUDE.md block ----
 $blockSource = Join-Path $repoRoot 'global\CLAUDE.md'
 $claudeMd = Join-Path $claudeDir 'CLAUDE.md'
