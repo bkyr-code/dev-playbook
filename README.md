@@ -31,6 +31,8 @@ powershell -ExecutionPolicy Bypass -File scripts\sync-skills.ps1
 
 ## Claude Code の権限設定（全リポジトリ共通・一度だけ）
 
+> この節と「セッション名を自動で付けるフック」の設定は、`powershell -ExecutionPolicy Bypass -File scripts\setup-claude-settings.ps1` で `~/.claude/settings.json` に自動で追記できる（既存の設定は残し、変更前に `settings.json.bak` を作る。何度実行してもよい）。下の JSON は、手で編集する場合の参考。
+
 ブランチ保護では「CI が通った PR を Claude がマージすること」は止められない。push・マージ・GitHub API の操作で必ず確認が出るよう、`~/.claude/settings.json`（`C:\Users\<ユーザー名>\.claude\settings.json`）の `permissions.ask` に次を加える。ファイルが既にある場合は、`ask` の配列に追記する。
 
 ```json
